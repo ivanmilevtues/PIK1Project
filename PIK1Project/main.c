@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <Windows.h>
+#include <stdbool.h>
 
 /*
  * Main file for the project
@@ -18,21 +19,29 @@ enum MenuOptions
 int menuPicker();
 void validateSelectedOperation(int * selectedOperation);
 void printMenu(int selectedOption, char activeOperation);
+void operateStreams(FILE * inStream, FILE * outStream);
+int isLineEmpty(char * line);
+int getNumberOfOperators(char * line);
+void * numberToString(int number, char * string);
+void readUserInput(bool fromInputFile, bool fromOutputFile, FILE ** inputFile, FILE ** outputFile);
 
 int main()
 {
 	SetConsoleOutputCP(1251);
 
+	FILE ** inputFile = NULL, **outputFile = NULL;
+
 	// pick function for the selected operation
 	switch (menuPicker())
 	{
-	case ReadFromFileWriteToFile: break;
-	case ReadFromFileWriteToSTDOUT: break;
-	case ReadFromSTDINWriteToFile: break;
-	case ReadFromSTDINWriteToSTDOUT: break;
+	case ReadFromFileWriteToFile: readUserInput(true, true, &inputFile, &outputFile); break;
+	case ReadFromFileWriteToSTDOUT: readUserInput(true, false, &inputFile, &outputFile); break;
+	case ReadFromSTDINWriteToFile: readUserInput(false, true, &inputFile, &outputFile); break;
+	case ReadFromSTDINWriteToSTDOUT: readUserInput(false, false, &inputFile, &outputFile); break;
 	default:
 		break;
 	}
+	operateStreams(inputFile, outputFile);
 	system("pause");
 	return 0;
 }
@@ -71,9 +80,9 @@ void printMenu(int selectedOption, char activeOperation)
 {
 	system("cls");
 	char * opertaions[] = { "четене от фаил и запис в фруг фаил",
-						 "четене от фаил и извеждане на stdout",
-						 "четене от stdin и извеждане в фаил",
-						 "четене от stdin и извждане от stdout" };
+						    "четене от фаил и извеждане на stdout",
+							"четене от stdin и извеждане в фаил",
+							"четене от stdin и извждане от stdout" };
 
 	for (int i = 0; i < 4; i++) {
 		if (i == selectedOption) {
@@ -85,4 +94,82 @@ void printMenu(int selectedOption, char activeOperation)
 
 		printf("%s\n", opertaions[i]);
 	}
+}
+
+void operateStreams(FILE * inStream, FILE * outStream)
+{
+	char lineBuffer[128];
+	memset(lineBuffer, 0, 128 * (sizeof lineBuffer[0]));
+	int numberOfEmptyLines = 0, numberOfOperators = 0;
+	bool noError = true;
+	while (fgets(lineBuffer, sizeof(lineBuffer), inStream)) {
+		numberOfEmptyLines += isLineEmpty(lineBuffer);
+		numberOfOperators += getNumberOfOperators(lineBuffer);
+
+		memset(lineBuffer, 0, 128 * (sizeof lineBuffer[0]));
+	}
+
+	char numAsString[100] = {'0', '\0'};
+	fputs("Брой празни редове: ", outStream);
+	fputs(numberToString(numberOfEmptyLines, numAsString), outStream);
+	fputs(" Брой оператори: ", outStream);
+	fputs(numberToString(numberOfOperators, numAsString), outStream);
+	fputc('\n', outStream);
+}
+
+int isLineEmpty(char *line) {
+	if (strstr(line, "\n") != NULL) {
+		return strlen(line) <= 1;
+	}
+	return strlen(line) <= 0;
+}
+
+int getNumberOfOperators(char * line) {
+	return 2;
+}
+
+void readUserInput(bool fromInputFile, bool fromOutputFile, FILE ** inputFile, FILE ** outputFile)
+{
+	char inputFileName[40], outputFileName[40];
+	if (fromInputFile) {
+		printf("Моля въведете името на фаила за четене: ");
+		scanf("%s", inputFileName);
+		*inputFile = fopen(inputFileName, "r+");
+	}
+	else {
+		*inputFile = stdin;
+	}
+
+	if (fromOutputFile) {
+		printf("Моля въведете името на фаила за писане на резултат: ");
+		scanf("%s", outputFileName);
+		*outputFile = fopen(outputFileName, "w+");
+	}
+	else {
+		*outputFile = stdout;
+	}
+}
+
+
+char * numberToString(int number, char * string) {
+	if (number == 0) {
+		return string;
+	}
+
+	int i = 0;
+	while (number > 0) {
+		char digit = '0' + number % 10;
+		number /= 10;
+		string[i] = digit;
+		i++;
+	}
+	
+	string[i] = '\0';
+
+	for (int k = 0; k < strlen(string) / 2; k++) {
+		char swap = string[k];
+		string[k] = string[strlen(string) - 1 - k];
+		string[strlen(string) - 1 - k] = swap;
+	}
+	return string;
 }
