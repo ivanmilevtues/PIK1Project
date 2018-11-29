@@ -21,7 +21,9 @@ void validateSelectedOperation(int * selectedOperation);
 void printMenu(int selectedOption, char activeOperation);
 void operateStreams(FILE * inStream, FILE * outStream);
 int isLineEmpty(char * line);
-int getNumberOfOperators(char * line);
+int getNumberOfOperators(char * line, bool * isInComment);
+bool isInlineCommented(char *line, char * operator, bool * inlineComment);
+bool isLineCommented(char *line, bool * multilineComment);
 void * numberToString(int number, char * string);
 void readUserInput(bool fromInputFile, bool fromOutputFile, FILE ** inputFile, FILE ** outputFile);
 
@@ -102,9 +104,10 @@ void operateStreams(FILE * inStream, FILE * outStream)
 	memset(lineBuffer, 0, 128 * (sizeof lineBuffer[0]));
 	int numberOfEmptyLines = 0, numberOfOperators = 0;
 	bool noError = true;
+	bool inMultilineComment = false;
 	while (fgets(lineBuffer, sizeof(lineBuffer), inStream)) {
 		numberOfEmptyLines += isLineEmpty(lineBuffer);
-		numberOfOperators += getNumberOfOperators(lineBuffer);
+		numberOfOperators += getNumberOfOperators(lineBuffer, &inMultilineComment);
 
 		memset(lineBuffer, 0, 128 * (sizeof lineBuffer[0]));
 	}
@@ -124,17 +127,61 @@ int isLineEmpty(char *line) {
 	return strlen(line) <= 0;
 }
 
-int getNumberOfOperators(char * line) {
+int getNumberOfOperators(char * line, bool* isInComment) {
 	int matches = 0;
-	char *operators[] = { "(", "[", "->", ".", "!", "+", "++", "-", "--", "&", "&&", "|", "||", "*", ">>" }; // TODO add them all
-	for (int i = 0; i < 15; i++) {
+	bool inlineComment = false;
+	char * comment, *operator;
+	char *operators[] = { "(", "[", "->", ".", "!", "+", "++", "-", "--", "&", "&&", "|", "||", ">>" }; // TODO add them all
+	
+	if (isLineCommented(line, isInComment) && *isInComment) {
+		return 0;
+	}
+	
+	for (int i = 0; i < 13; i++) {
+		if (inlineComment) {
+			break;
+		}
 		int k = 0;
-		while (strstr(line + k, operators[i]) != NULL) {
+		operator = line;
+		while ((operator = strstr(operator + k, operators[i])) != NULL) {
+			if (isInlineCommented(line, operator, &inlineComment)) {
+				break;
+			}
 			k += strlen(operators[i]);
 			matches++;
 		}
 	}
 	return matches;
+}
+
+bool isInlineCommented(char *line, char * operator, bool * inlineComment) {
+	char * comment;
+	if ((comment = strstr(line, "//")) != NULL && comment - operator < 0) {
+		*inlineComment = true;
+		return true;
+	}
+	if ((comment = strstr(line, "/*")) != NULL && comment - operator < 0) {
+		*inlineComment = true;
+		return true;
+	}
+
+	if ((comment = strstr(line, "*/")) != NULL && comment - operator > 0) {
+		return true;
+	}
+	return false;
+}
+
+bool isLineCommented(char * line,bool*multilineComment)
+{
+	if (strstr(line, "/*") != NULL) {
+		*multilineComment = true;
+		return false;
+	}
+	if (strstr(line, "*/") != NULL) {
+		*multilineComment = false;
+		return false;
+	}
+	return multilineComment;
 }
 
 void readUserInput(bool fromInputFile, bool fromOutputFile, FILE ** inputFile, FILE ** outputFile)
