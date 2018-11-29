@@ -125,7 +125,16 @@ int isLineEmpty(char *line) {
 }
 
 int getNumberOfOperators(char * line) {
-	return 2;
+	int matches = 0;
+	char *operators[] = { "(", "[", "->", ".", "!", "+", "++", "-", "--", "&", "&&", "|", "||", "*", ">>" }; // TODO add them all
+	for (int i = 0; i < 15; i++) {
+		int k = 0;
+		while (strstr(line + k, operators[i]) != NULL) {
+			k += strlen(operators[i]);
+			matches++;
+		}
+	}
+	return matches;
 }
 
 void readUserInput(bool fromInputFile, bool fromOutputFile, FILE ** inputFile, FILE ** outputFile)
