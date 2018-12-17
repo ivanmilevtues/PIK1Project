@@ -131,13 +131,13 @@ int getNumberOfOperators(char * line, bool* isInComment) {
 	int matches = 0;
 	bool inlineComment = false;
 	char * comment, *operator;
-	char *operators[] = { "(", "[", "->", ".", "!", "+", "++", "-", "--", "&", "&&", "|", "||", ">>" }; // TODO add them all
+	char *operators[] = { "while", "break", "if", "continue", "switch", "case"}; // TODO add them all
 	
 	if (isLineCommented(line, isInComment) && *isInComment) {
 		return 0;
 	}
 	
-	for (int i = 0; i < 13; i++) {
+	for (int i = 0; i < 6; i++) {
 		if (inlineComment) {
 			break;
 		}
@@ -171,7 +171,7 @@ bool isInlineCommented(char *line, char * operator, bool * inlineComment) {
 	return false;
 }
 
-bool isLineCommented(char * line,bool*multilineComment)
+bool isLineCommented(char * line, bool*multilineComment)
 {
 	if (strstr(line, "/*") != NULL) {
 		*multilineComment = true;
@@ -228,4 +228,27 @@ char * numberToString(int number, char * string) {
 		string[strlen(string) - 1 - k] = swap;
 	}
 	return string;
+}
+
+void removeStrings(char * line) {
+	char * start = NULL;
+	char * end = NULL;
+	for (int i = 0; i < strlen(line); i++) {
+		if (line[i] == '\"') {
+			start = start == NULL ? line + i : start;
+			end = end == NULL ? line + i : end;
+		}
+	}
+	// use strcut or strtok or whatnot for cutting this from the string strcat and concat from 0 to start 
+	strcat(line, end);
+}
+
+
+char * substr(char* str, char * startSubstr, char * endSubstr) {
+	char returnStr[250];
+	*startSubstr = '\0';
+	strcat(returnStr, str);
+	strcat(returnStr, endSubstr);
+
+	return returnStr;
 }
