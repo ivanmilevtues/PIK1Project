@@ -17,13 +17,15 @@ enum MenuOptions
 };
 
 int menuPicker();
+char * substr(char* str, char * startSubstr, char * endSubstr, int lengthOfSymbols);
 void validateSelectedOperation(int * selectedOperation);
 void printMenu(int selectedOption, char activeOperation);
 void operateStreams(FILE * inStream, FILE * outStream);
 int isLineEmpty(char * line);
-int getNumberOfOperators(char * line, bool * isInComment);
-bool isInlineCommented(char *line, char * operator, bool * inlineComment);
-bool isLineCommented(char *line, bool * multilineComment);
+char * removeStrings(char * line);
+void removeInlineComments(char * line);
+char * removeMultiLineComments(char * line, bool * isInMultilineComment);
+int getNumberOfOperators(char * line, bool * isInMultiLineComment);
 void * numberToString(int number, char * string);
 void readUserInput(bool fromInputFile, bool fromOutputFile, FILE ** inputFile, FILE ** outputFile);
 
@@ -44,6 +46,8 @@ int main()
 		break;
 	}
 	operateStreams(inputFile, outputFile);
+	char sad[] = "beforeString\"\"afterString";
+	removeStrings(sad);
 	system("pause");
 	return 0;
 }
@@ -103,11 +107,10 @@ void operateStreams(FILE * inStream, FILE * outStream)
 	char lineBuffer[128];
 	memset(lineBuffer, 0, 128 * (sizeof lineBuffer[0]));
 	int numberOfEmptyLines = 0, numberOfOperators = 0;
-	bool noError = true;
-	bool inMultilineComment = false;
+	bool isInMultiLineComment = false;
 	while (fgets(lineBuffer, sizeof(lineBuffer), inStream)) {
 		numberOfEmptyLines += isLineEmpty(lineBuffer);
-		numberOfOperators += getNumberOfOperators(lineBuffer, &inMultilineComment);
+		numberOfOperators += getNumberOfOperators(lineBuffer, &isInMultiLineComment);
 
 		memset(lineBuffer, 0, 128 * (sizeof lineBuffer[0]));
 	}
@@ -124,64 +127,25 @@ int isLineEmpty(char *line) {
 	if (strstr(line, "\n") != NULL) {
 		return strlen(line) <= 1;
 	}
-	return strlen(line) <= 0;
+	return strlen(line) == 0;
 }
 
-int getNumberOfOperators(char * line, bool* isInComment) {
+int getNumberOfOperators(char * line, bool * isInMultiLineComment) {
 	int matches = 0;
-	bool inlineComment = false;
 	char * comment, *operator;
 	char *operators[] = { "while", "break", "if", "continue", "switch", "case"}; // TODO add them all
-	
-	if (isLineCommented(line, isInComment) && *isInComment) {
-		return 0;
-	}
-	
+	line = removeMultiLineComments(line, isInMultiLineComment);
+	line = removeStrings(line);
+	removeInlineComments(line);
 	for (int i = 0; i < 6; i++) {
-		if (inlineComment) {
-			break;
-		}
 		int k = 0;
 		operator = line;
 		while ((operator = strstr(operator + k, operators[i])) != NULL) {
-			if (isInlineCommented(line, operator, &inlineComment)) {
-				break;
-			}
 			k += strlen(operators[i]);
 			matches++;
 		}
 	}
 	return matches;
-}
-
-bool isInlineCommented(char *line, char * operator, bool * inlineComment) {
-	char * comment;
-	if ((comment = strstr(line, "//")) != NULL && comment - operator < 0) {
-		*inlineComment = true;
-		return true;
-	}
-	if ((comment = strstr(line, "/*")) != NULL && comment - operator < 0) {
-		*inlineComment = true;
-		return true;
-	}
-
-	if ((comment = strstr(line, "*/")) != NULL && comment - operator > 0) {
-		return true;
-	}
-	return false;
-}
-
-bool isLineCommented(char * line, bool*multilineComment)
-{
-	if (strstr(line, "/*") != NULL) {
-		*multilineComment = true;
-		return false;
-	}
-	if (strstr(line, "*/") != NULL) {
-		*multilineComment = false;
-		return false;
-	}
-	return multilineComment;
 }
 
 void readUserInput(bool fromInputFile, bool fromOutputFile, FILE ** inputFile, FILE ** outputFile)
@@ -230,25 +194,64 @@ char * numberToString(int number, char * string) {
 	return string;
 }
 
-void removeStrings(char * line) {
+char *  removeStrings(char * line) {
 	char * start = NULL;
 	char * end = NULL;
 	for (int i = 0; i < strlen(line); i++) {
 		if (line[i] == '\"') {
-			start = start == NULL ? line + i : start;
-			end = end == NULL ? line + i : end;
+			if (start == NULL) {
+				start = line + i;
+			}
+			else {
+				end = line + i;
+			}
 		}
 	}
-	// use strcut or strtok or whatnot for cutting this from the string strcat and concat from 0 to start 
-	strcat(line, end);
+	if (start != NULL && end != NULL) {
+		line = substr(line, start, end, 1);
+	}
+	return line;
 }
 
+void removeInlineComments(char * line) {
+	char * comment = strstr(line, "//");
+	if (comment != NULL) {
+		*comment = '\0';
+	}
+}
 
-char * substr(char* str, char * startSubstr, char * endSubstr) {
-	char returnStr[250];
+char * removeMultiLineComments(char * line, bool * isInMultilineComment) {
+	char * startComment = strstr(line, "/*");
+	char * endComment = strstr(line, "*/");
+	if (*isInMultilineComment) {
+		if (endComment != NULL) {
+			line = endComment + 2; // plus 2 as */ and we want to pass this
+			*isInMultilineComment = false;
+		}
+		else {
+			*line = '\0';
+		}
+	}
+	else {
+		if (startComment != NULL && endComment != NULL) {
+			line = substr(line, startComment, endComment, 2);
+		}
+		else {
+			if (startComment != NULL) {
+				*isInMultilineComment = true;
+				*startComment = '\0';
+			}
+		}
+	}
+
+	return line;
+}
+
+char * substr(char* str, char * startSubstr, char * endSubstr, int lengthOfSymbols) {
+	char returnStr[256] = { '\0' };
 	*startSubstr = '\0';
 	strcat(returnStr, str);
-	strcat(returnStr, endSubstr);
+	strcat(returnStr, endSubstr + lengthOfSymbols);
 
 	return returnStr;
 }

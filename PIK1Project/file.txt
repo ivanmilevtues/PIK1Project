@@ -1,3 +1,5 @@
+case /*dasdasd*/ case
+"dasdasd" break
 // while
 while // break
 switch
@@ -7,4 +9,4 @@ while
 */break
 break
 continue
-"dasdasd"
+continue "continue"
