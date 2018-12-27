@@ -104,16 +104,18 @@ void printMenu(int selectedOption, char activeOperation)
 
 void operateStreams(FILE * inStream, FILE * outStream)
 {
-	char lineBuffer[128];
+	char lineBuffer[128], lastLineChar = '\n';
 	memset(lineBuffer, 0, 128 * (sizeof lineBuffer[0]));
 	int numberOfEmptyLines = 0, numberOfOperators = 0;
 	bool isInMultiLineComment = false;
 	while (fgets(lineBuffer, sizeof(lineBuffer), inStream)) {
+		lastLineChar = lineBuffer[strlen(lineBuffer) - 1];
 		numberOfEmptyLines += isLineEmpty(lineBuffer);
 		numberOfOperators += getNumberOfOperators(lineBuffer, &isInMultiLineComment);
-
 		memset(lineBuffer, 0, 128 * (sizeof lineBuffer[0]));
 	}
+
+	numberOfEmptyLines = lastLineChar == '\n' ? numberOfEmptyLines + 1 : numberOfEmptyLines;
 
 	char numAsString[100] = {'0', '\0'};
 	fputs("Брой празни редове: ", outStream);
