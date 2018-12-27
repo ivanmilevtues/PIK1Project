@@ -126,10 +126,12 @@ void operateStreams(FILE * inStream, FILE * outStream)
 }
 
 int isLineEmpty(char *line) {
-	if (strstr(line, "\n") != NULL) {
-		return strlen(line) <= 1;
+	for (int i = 0; i < strlen(line); i++) {
+		if (!isspace(line[i])) {
+			return false;
+		}
 	}
-	return strlen(line) == 0;
+	return true;
 }
 
 int getNumberOfOperators(char * line, bool * isInMultiLineComment) {
