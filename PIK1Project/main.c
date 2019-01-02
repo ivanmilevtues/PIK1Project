@@ -171,7 +171,7 @@ void readUserInput(bool fromInputFile, bool fromOutputFile, FILE ** inputFile, F
 		do {
 			k = scanf("%s", inputFileName);
 			while (getchar() != '\n');
-		} while (k == 0 || isFileExtensionValid(inputFileName));
+		} while (k == 0 || !isFileExtensionValid(inputFileName));
 		*inputFile = fopen(inputFileName, "r+");
 		if (*inputFile == NULL) {
 			perror("Грешка при отваряне на файл за четене");
