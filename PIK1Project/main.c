@@ -28,6 +28,7 @@ char * removeMultiLineComments(char * line, bool * isInMultilineComment);
 int getNumberOfOperators(char * line, bool * isInMultiLineComment);
 void * numberToString(int number, char * string);
 void readUserInput(bool fromInputFile, bool fromOutputFile, FILE ** inputFile, FILE ** outputFile);
+bool isFileExtensionValid(char * fileName);
 
 int main()
 {
@@ -46,8 +47,6 @@ int main()
 		break;
 	}
 	operateStreams(inputFile, outputFile);
-	char sad[] = "beforeString\"\"afterString";
-	removeStrings(sad);
 	system("pause");
 	return 0;
 }
@@ -117,12 +116,22 @@ void operateStreams(FILE * inStream, FILE * outStream)
 
 	numberOfEmptyLines = lastLineChar == '\n' ? numberOfEmptyLines + 1 : numberOfEmptyLines;
 
-	char numAsString[100] = {'0', '\0'};
-	fputs("Брой празни редове: ", outStream);
-	fputs(numberToString(numberOfEmptyLines, numAsString), outStream);
-	fputs(" Брой оператори: ", outStream);
-	fputs(numberToString(numberOfOperators, numAsString), outStream);
-	fputc('\n', outStream);
+	char numAsString[100] = { '0', '\0' };
+	if (fputs("Брой празни редове: ", outStream) < 0) {
+		perror("Грешла при писане");
+	}
+	if (fputs(numberToString(numberOfEmptyLines, numAsString), outStream) < 0) {
+		perror("Грешла при писане");
+	}
+	if (fputs(" Брой оператори: ", outStream) < 0) {
+		perror("Грешла при писане");
+	}
+	if (fputs(numberToString(numberOfOperators, numAsString), outStream) < 0) {
+		perror("Грешла при писане");
+	}
+	if (fputc('\n', outStream) < 0) {
+		perror("Грешла при писане");
+	}
 }
 
 int isLineEmpty(char *line) {
@@ -135,13 +144,14 @@ int isLineEmpty(char *line) {
 }
 
 int getNumberOfOperators(char * line, bool * isInMultiLineComment) {
-	int matches = 0;
+	int matches = 0, operatorsLength = -1;
 	char * comment, *operator;
-	char *operators[] = { "while", "break", "if", "continue", "switch", "case"}; // TODO add them all
+	char *operators[] = { "while", "break", "if", "continue", "switch", "case", NULL};
+	while (operators[++operatorsLength] != NULL);
 	line = removeMultiLineComments(line, isInMultiLineComment);
 	line = removeStrings(line);
 	removeInlineComments(line);
-	for (int i = 0; i < 6; i++) {
+	for (int i = 0; i < operatorsLength; i++) {
 		int k = 0;
 		operator = line;
 		while ((operator = strstr(operator + k, operators[i])) != NULL) {
@@ -154,24 +164,43 @@ int getNumberOfOperators(char * line, bool * isInMultiLineComment) {
 
 void readUserInput(bool fromInputFile, bool fromOutputFile, FILE ** inputFile, FILE ** outputFile)
 {
-	char inputFileName[40], outputFileName[40];
+	char inputFileName[40] = {'\0'}, outputFileName[40] = { '\0' };
+	int k;
 	if (fromInputFile) {
-		printf("Моля въведете името на фаила за четене: ");
-		scanf("%s", inputFileName);
+		printf("Моля въведете името на файла за четене: ");
+		do {
+			k = scanf("%s", inputFileName);
+			while (getchar() != '\n');
+		} while (k == 0 || isFileExtensionValid(inputFileName));
 		*inputFile = fopen(inputFileName, "r+");
+		if (*inputFile == NULL) {
+			perror("Грешка при отваряне на файл за четене");
+		}
 	}
 	else {
 		*inputFile = stdin;
 	}
 
 	if (fromOutputFile) {
-		printf("Моля въведете името на фаила за писане на резултат: ");
-		scanf("%s", outputFileName);
+		printf("Моля въведете името на файла за писане на резултат: ");
+		do {
+			k = scanf("%s", outputFileName);
+			while (getchar() != '\n');
+		} while (k == 0);
 		*outputFile = fopen(outputFileName, "w+");
+		if (*outputFile == NULL) {
+			perror("Грешка при отваряне на файл за писане");
+		}
 	}
 	else {
 		*outputFile = stdout;
 	}
+}
+
+bool isFileExtensionValid(char * fileName)
+{
+	int fileNameLen = strlen(fileName);
+	return fileName[fileNameLen - 2] == '.' && fileName[fileNameLen - 1];
 }
 
 
