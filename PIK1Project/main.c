@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <Windows.h>
+#include <conio.h>
 #include <stdbool.h>
 
 /*
@@ -18,7 +19,7 @@ enum MenuOptions
 
 int menuPicker();
 char * substr(char* str, char * startSubstr, char * endSubstr, int lengthOfSymbols);
-void validateSelectedOperation(enum MenuOptions * selectedOperation);
+void validateSelectedOperation(int * selectedOperation);
 void printMenu(int selectedOption, char activeOperation);
 void operateStreams(FILE * inStream, FILE * outStream);
 int isLineEmpty(char * line);
@@ -34,7 +35,7 @@ int main()
 {
 	SetConsoleOutputCP(1251);
 
-	FILE ** inputFile = NULL, **outputFile = NULL;
+	FILE * inputFile = NULL, *outputFile = NULL;
 
 	// pick function for the selected operation
 	switch (menuPicker())
@@ -56,9 +57,9 @@ enum Option menuPicker()
 	int selectedOperation = ReadFromFileWriteToFile;
 	char activeOperation = '>', enterKey = 13, userClick, upwardKey = 80, downwordKey = 72;
 	printMenu(selectedOperation, activeOperation);
-	while (getch() != enterKey) {
+	while (_getch() != enterKey) {
 		// as I want to use the arrow keys we need to take the second char too as it differentiates them
-		userClick = getch();
+		userClick = _getch();
 		if (userClick == upwardKey) {
 			selectedOperation++;
 		}
@@ -71,7 +72,7 @@ enum Option menuPicker()
 	return selectedOperation;
 }
 
-void validateSelectedOperation(enum MenuOptions * selectedOperation)
+void validateSelectedOperation(int * selectedOperation)
 {
 	if (*selectedOperation < 0) {
 		*selectedOperation = ReadFromSTDINWriteToSTDOUT;
@@ -135,7 +136,7 @@ void operateStreams(FILE * inStream, FILE * outStream)
 }
 
 int isLineEmpty(char *line) {
-	for (int i = 0; i < strlen(line); i++) {
+	for (unsigned int i = 0; i < strlen(line); i++) {
 		if (!isspace(line[i])) {
 			return false;
 		}
@@ -145,7 +146,7 @@ int isLineEmpty(char *line) {
 
 int getNumberOfOperators(char * line, bool * isInMultiLineComment) {
 	int matches = 0, operatorsLength = -1;
-	char * comment, *operator;
+	char *operator;
 	char *operators[] = { "while", "break", "if", "continue", "switch", "case", NULL};
 	while (operators[++operatorsLength] != NULL);
 	line = removeMultiLineComments(line, isInMultiLineComment);
@@ -206,6 +207,7 @@ bool isFileExtensionValid(char * fileName)
 
 char * numberToString(int number, char * string) {
 	if (number == 0) {
+		*string = '0';
 		return string;
 	}
 
@@ -219,7 +221,7 @@ char * numberToString(int number, char * string) {
 	
 	string[i] = '\0';
 
-	for (int k = 0; k < strlen(string) / 2; k++) {
+	for (unsigned int k = 0; k < strlen(string) / 2; k++) {
 		char swap = string[k];
 		string[k] = string[strlen(string) - 1 - k];
 		string[strlen(string) - 1 - k] = swap;
@@ -230,7 +232,7 @@ char * numberToString(int number, char * string) {
 char *  removeStrings(char * line) {
 	char * start = NULL;
 	char * end = NULL;
-	for (int i = 0; i < strlen(line); i++) {
+	for (unsigned int i = 0; i < strlen(line); i++) {
 		if (line[i] == '\"') {
 			if (start == NULL) {
 				start = line + i;
@@ -285,6 +287,6 @@ char * substr(char* str, char * startSubstr, char * endSubstr, int lengthOfSymbo
 	*startSubstr = '\0';
 	strcat(returnStr, str);
 	strcat(returnStr, endSubstr + lengthOfSymbols);
-
-	return returnStr;
+	strcpy(str, returnStr);
+	return str;
 }
