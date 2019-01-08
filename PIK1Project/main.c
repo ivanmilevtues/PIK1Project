@@ -147,7 +147,7 @@ int isLineEmpty(char *line) {
 int getNumberOfOperators(char * line, bool * isInMultiLineComment) {
 	int matches = 0, operatorsLength = -1;
 	char *operator;
-	char *operators[] = { "while", "break", "if", "continue", "switch", "case", NULL};
+	char *operators[] = { "while", "break", "if", "else", "continue", "switch", "case", "for", NULL};
 	while (operators[++operatorsLength] != NULL);
 	line = removeMultiLineComments(line, isInMultiLineComment);
 	line = removeStrings(line);
@@ -238,6 +238,8 @@ char *  removeStrings(char * line) {
 				start = line + i;
 			}
 			else {
+				if (line[i - 1] == '\\')
+					continue;
 				end = line + i;
 			}
 		}
