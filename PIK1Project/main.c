@@ -18,7 +18,7 @@ enum MenuOptions
 
 int menuPicker();
 char * substr(char* str, char * startSubstr, char * endSubstr, int lengthOfSymbols);
-void validateSelectedOperation(int * selectedOperation);
+void validateSelectedOperation(enum MenuOptions * selectedOperation);
 void printMenu(int selectedOption, char activeOperation);
 void operateStreams(FILE * inStream, FILE * outStream);
 int isLineEmpty(char * line);
@@ -26,7 +26,7 @@ char * removeStrings(char * line);
 void removeInlineComments(char * line);
 char * removeMultiLineComments(char * line, bool * isInMultilineComment);
 int getNumberOfOperators(char * line, bool * isInMultiLineComment);
-void * numberToString(int number, char * string);
+char * numberToString(int number, char * string);
 void readUserInput(bool fromInputFile, bool fromOutputFile, FILE ** inputFile, FILE ** outputFile);
 bool isFileExtensionValid(char * fileName);
 
@@ -51,9 +51,9 @@ int main()
 	return 0;
 }
 
-int menuPicker()
+enum Option menuPicker()
 {
-	int selectedOperation = 0;
+	int selectedOperation = ReadFromFileWriteToFile;
 	char activeOperation = '>', enterKey = 13, userClick, upwardKey = 80, downwordKey = 72;
 	printMenu(selectedOperation, activeOperation);
 	while (getch() != enterKey) {
@@ -71,13 +71,13 @@ int menuPicker()
 	return selectedOperation;
 }
 
-void validateSelectedOperation(int * selectedOperation)
+void validateSelectedOperation(enum MenuOptions * selectedOperation)
 {
 	if (*selectedOperation < 0) {
-		*selectedOperation = 3;
+		*selectedOperation = ReadFromSTDINWriteToSTDOUT;
 	}
 	if (*selectedOperation >= 4) {
-		*selectedOperation = 0;
+		*selectedOperation = ReadFromFileWriteToFile;
 	}
 }
 

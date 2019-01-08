@@ -1,12 +1,2 @@
-case /*dasdasd*/ case
-"dasdasd" break
-// while
-while // break
-switch
+while{for{}while{}}
 
-case/*
-while
-*/break
-break
-continue
-continue "continue"
